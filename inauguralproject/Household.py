@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 class HouseholdSpecializationModelClass:
 
     def __init__(self):
+
         """ setup model """
 
         # a. create namespaces
@@ -54,7 +55,14 @@ class HouseholdSpecializationModelClass:
         C = par.wM*LM + par.wF*LF
 
         # b. home production
-        H = HM**(1-par.alpha)*HF**par.alpha
+        if par.sigma==1:
+            H = HM**(1-par.alpha)*HF**par.alpha
+        elif par.sigma==0:
+            H = np.min(np.array([HM,HF]))
+        else:
+            sigma_ = (par.sigma-1)/par.sigma
+            H = ((1-par.alpha)*HM**sigma_ + (par.alpha)*HF**sigma_)**((sigma_)**-1)
+            
 
         # c. total consumption utility
         Q = C**par.omega*H**(1-par.omega)
