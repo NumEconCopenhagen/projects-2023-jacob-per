@@ -1,9 +1,8 @@
-# \[Group name\]
+# Jacob og Per
 
 **Group members:**
-- A
-- B
-- C
+- Per
+- Jacob
 
 This repository contains  
 1. Inaugural project. 
