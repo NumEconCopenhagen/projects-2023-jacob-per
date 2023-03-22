@@ -151,8 +151,13 @@ class HouseholdSpecializationModelClass:
         for i, wF in enumerate(self.par.wF_vec):
             par.wF = wF #set wF value
             
-            opt = self.solve() #Optimal allocation solution
-
+            if discrete==False:
+                opt = self.solve() #Optimal allocation solution
+            elif discrete==True:
+                opt = self.solve_discrete()
+            else:
+                print("discrete must be True or False")
+                
             sol.LM_vec[i] = opt.LM
             sol.HM_vec[i] = opt.HM
             sol.LF_vec[i] = opt.LF
