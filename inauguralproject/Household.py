@@ -132,17 +132,34 @@ class HouseholdSpecializationModelClass:
             return value
 
         # optimize
-        res = optimize.minimize(u,[1,1,1,1],method='Nelder-Mead')
+        solution = optimize.minimize(u,[1,1,1,1],method='Nelder-Mead')
 
         # save allocation
-        dict = {'LM' : res.x[0], 'HM' : res.x[1], 'LF' : res.x[2], 'HF' : res.x[3], 'u' : res.fun}
-
-        return dict
+        opt.LM = solution.x[0]
+        opt.HM = solution.x[1]
+        opt.LF = solution.x[2]
+        opt.HF = solution.x[3]
+        
+        return opt
 
     def solve_wF_vec(self,discrete=False):
         """ solve model for vector of female wages """
+        par = self.par
+        sol = self.sol
+        opt = SimpleNamespace()
+      
+        for i, wF in enumerate(self.par.wF_vec):
+            par.wF = wF #set wF value
+            
+            opt = self.solve() #Optimal allocation solution
 
-        pass
+            sol.LM_vec[i] = opt.LM
+            sol.HM_vec[i] = opt.HM
+            sol.LF_vec[i] = opt.LF
+            sol.HF_vec[i] = opt.HF
+            
+        return sol
+
 
     def run_regression(self):
         """ run regression """
