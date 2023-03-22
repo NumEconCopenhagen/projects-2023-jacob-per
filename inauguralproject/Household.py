@@ -115,6 +115,7 @@ class HouseholdSpecializationModelClass:
                 print(f'{k} = {v:6.4f}')
 
         return opt
+        
 
     def solve(self,do_print=False):
         """ solve model continously """
