@@ -12,7 +12,7 @@ class HouseholdSpecializationModelClass:
     def __init__(self):
 
         """ 
-        defines the paremterspace for the paremters and solutions      
+        defines the paramterspace for the parameters and solutions      
         """
 
         # a. create namespaces
@@ -212,7 +212,7 @@ class HouseholdSpecializationModelClass:
             return error
         
         # b. minimizes the error using 'Nelder-Mead' with bounds
-        solution = optimize.minimize(error,[alpha,sigma],method='Nelder-Mead', bounds=[(0.0001,10), (0.0001,10)])
+        solution = optimize.minimize(error,[alpha,sigma],method='Nelder-Mead', bounds=[(0.0001,0.999), (0.0001,10)])
         
         # c. saves optimal value for alpha and beta
         opt.alpha = solution.x[0]
