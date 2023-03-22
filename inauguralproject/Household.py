@@ -217,6 +217,7 @@ class HouseholdSpecializationModelClass:
         # c. saves optimal value for alpha and beta
         opt.alpha = solution.x[0]
         opt.sigma = solution.x[1]
+        error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
         opt.error = error
         
         return opt
