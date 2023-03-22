@@ -11,7 +11,9 @@ class HouseholdSpecializationModelClass:
 
     def __init__(self):
 
-        """ setup model """
+        """ 
+        defines the paremterspace for the paremters and solutions      
+        """
 
         # a. create namespaces
         par = self.par = SimpleNamespace()
@@ -46,7 +48,14 @@ class HouseholdSpecializationModelClass:
         sol.beta1 = np.nan
 
     def calc_utility(self,LM,HM,LF,HF):
-        """ calculate utility """
+        """ 
+        LM: male labor
+        HM: male home production
+        LF: female labor
+        HF: female home production
+        
+        calculates the total utility given the parmeters LM, HM, LF and HF 
+        """
 
         par = self.par
         sol = self.sol
@@ -65,7 +74,6 @@ class HouseholdSpecializationModelClass:
             sigma_ = (par.sigma-1)/par.sigma
             H = ((1-par.alpha)*HM**sigma_ + (par.alpha)*HF**sigma_)**((sigma_)**-1)
             
-
         # c. total consumption utility
         Q = C**par.omega*H**(1-par.omega)
         utility = np.fmax(Q,1e-8)**(1-par.rho)/(1-par.rho)
@@ -78,8 +86,8 @@ class HouseholdSpecializationModelClass:
         
         return utility - disutility
 
-    def solve_discrete(self,do_print=False):
-        """ solve model discretely """
+    def solve_discrete(self):
+        """ solves the model discretely """
         
         par = self.par
         sol = self.sol
@@ -109,22 +117,17 @@ class HouseholdSpecializationModelClass:
         opt.LF = LF[j]
         opt.HF = HF[j]
 
-        # e. print
-        if do_print:
-            for k,v in opt.__dict__.items():
-                print(f'{k} = {v:6.4f}')
-
         return opt
         
 
-    def solve(self,do_print=False):
-        """ solve model continously """
+    def solve(self):
+        """ solves the model continously """
         par = self.par
         sol = self.sol
         opt = SimpleNamespace()
         
-        # constrains
-        def u(x):
+        # a. value function given the paremters (in order) LM, HM, LF and HF
+        def v(x):
             value = -self.calc_utility(x[0],x[1],x[2],x[3])
             if x[0]+[1]>24:
                 value = -np.inf
@@ -132,10 +135,10 @@ class HouseholdSpecializationModelClass:
                 value = -np.inf
             return value
 
-        # optimize
-        solution = optimize.minimize(u,[1,1,1,1],method='Nelder-Mead')
+        # b. optimize the valuefunction w.r.t LM, HM, LF and HF
+        solution = optimize.minimize(v,[1,1,1,1],method='Nelder-Mead')
 
-        # save allocation
+        # c. save the optimal allocation of LM, HM, LF and HF
         opt.LM = solution.x[0]
         opt.HM = solution.x[1]
         opt.LF = solution.x[2]
@@ -144,21 +147,26 @@ class HouseholdSpecializationModelClass:
         return opt
 
     def solve_wF_vec(self,discrete=False):
-        """ solve model for vector of female wages """
+        """ 
+        discrete: True or False. False is standard.
+
+        solve model for vector of female wages """
         par = self.par
         sol = self.sol
         opt = SimpleNamespace()
-      
-        for i, wF in enumerate(self.par.wF_vec):
+
+        # a. solve the model (discretly or continously) for a given female wage
+        for i, wF in enumerate(par.wF_vec):
             par.wF = wF #set wF value
             
             if discrete==False:
-                opt = self.solve() #Optimal allocation solution
+                opt = self.solve() #Optimal allocation solution (continous)
             elif discrete==True:
-                opt = self.solve_discrete()
+                opt = self.solve_discrete() #Optimal allocation solution (discrete)
             else:
                 print("discrete must be True or False")
-                
+
+            # saves solution for each female wage 
             sol.LM_vec[i] = opt.LM
             sol.HM_vec[i] = opt.HM
             sol.LF_vec[i] = opt.LF
@@ -173,32 +181,43 @@ class HouseholdSpecializationModelClass:
         par = self.par
         sol = self.sol
 
+        # a. define log values
         x = np.log(par.wF_vec)
         y = np.log(sol.HF_vec/sol.HM_vec)
+
+        # b. run regression 
         A = np.vstack([np.ones(x.size),x]).T
         sol.beta0,sol.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
 
         return sol
     
     def estimate(self,alpha=0.5,sigma=0.5):
-        """ estimate alpha and sigma """
+        """ 
+        alpha, sigma: set starting guess (standard=0.5) 
+
+        estimate optimal values for alpha and sigma """
         par = self.par
         sol = self.sol
         opt = SimpleNamespace()
 
+        # a. defines error function
         def error(x):# self.par.alpha = alpha
             alpha, sigma = x.ravel()
-            par.alpha = alpha
-            par.sigma = sigma
-            self.solve_wF_vec()
-            sol = self.run_regression()
-            error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2
+            par.alpha = alpha # sets alpha value
+            par.sigma = sigma # sets sigma value
+            
+            self.solve_wF_vec() # finds optimal household production 
+            sol = self.run_regression() # calculates beta0 and beta1
+            error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
             return error
         
+        # b. minimizes the error using 'Nelder-Mead' with bounds
         solution = optimize.minimize(error,[alpha,sigma],method='Nelder-Mead', bounds=[(0.0001,10), (0.0001,10)])
         
+        # c. saves optimal value for alpha and beta
         opt.alpha = solution.x[0]
         opt.sigma = solution.x[1]
+        opt.error = error
         
         return opt
         
