@@ -201,7 +201,7 @@ class HouseholdSpecializationModelClass:
         opt = SimpleNamespace()
 
         # a. defines error function
-        def error(x):# self.par.alpha = alpha
+        def error(x):
             alpha, sigma = x.ravel()
             par.alpha = alpha # sets alpha value
             par.sigma = sigma # sets sigma value
@@ -222,3 +222,32 @@ class HouseholdSpecializationModelClass:
         
         return opt
         
+    def est_alphacons(self,sigma=0.5):
+        """ 
+        sigma: set starting guess (standard=0.5) 
+
+        estimate optimal values for sigma given alpha=0.5"""
+        par = self.par
+        sol = self.sol
+        opt2 = SimpleNamespace()
+        par.alpha = 0.5
+
+        # a. defines error function
+        def error(sigma):
+            par.sigma = sigma # sets sigma value
+            
+            self.solve_wF_vec() # finds optimal household production 
+            sol = self.run_regression() # calculates beta0 and beta1
+            error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
+            return error
+        
+        # b. minimizes the error using 'Nelder-Mead' with bounds
+        solution = optimize.minimize(error,[sigma],method='Nelder-Mead', bounds=[(0.0001,10)])
+        
+        # c. saves optimal value for alpha and beta
+        opt2.sigma = solution.x[0]
+        
+        error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
+        opt2.error = error
+
+        return opt2
