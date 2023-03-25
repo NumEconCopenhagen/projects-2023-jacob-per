@@ -1,7 +1,7 @@
 # Jacob og Per
 
 **Group members:**
-- Per
+- Per (snm410)
 - Jacob (vwm118)
 
 This repository contains  
