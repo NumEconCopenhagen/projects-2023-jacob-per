@@ -2,7 +2,7 @@
 
 **Group members:**
 - Per
-- Jacob
+- Jacob (vwm118)
 
 This repository contains  
 1. Inaugural project. 
