@@ -1,8 +1,8 @@
 # Jacob og Per
 
 **Group members:**
-- Per
-- Jacob
+- Per (snm410)
+- Jacob (vwm118)
 
 This repository contains  
 1. Inaugural project. 
