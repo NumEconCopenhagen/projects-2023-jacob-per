@@ -225,19 +225,20 @@ class HouseholdSpecializationModelClass:
         
         return opt
         
-    def est_alphacons(self,sigma=0.5,epsilonM=1,epsilonF=1,ext=True):
+    def est_alphacons(self,sigma=0.5,epsilonM=1,epsilonF=1,extended=True):
         """ 
-        sigma: set starting guess (standard=0.5) 
-
-        estimate optimal values for sigma given alpha=0.5"""
+        sigma, epsilonM, epsilonF: set starting guess (default=1) 
+        extended: True if epsilonM and epsilonF should be optimized. False otherwise
+        
+        estimate optimal values for coefficients given alpha=0.5"""
 
         par = self.par
         sol = self.sol
         opt = SimpleNamespace()
         par.alpha = 0.5
 
-        # a. defines error function
-        if ext==True:
+        if extended==True: 
+            # a.i defines error function
             def error(x):
                 sigma, epsilonM, epsilonF = x.ravel()
                 par.sigma = sigma # sets sigma value
@@ -249,13 +250,16 @@ class HouseholdSpecializationModelClass:
                 error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
                 return error
             
+            # b.i minimizes the error using 'Nelder-Mead' with bounds
             solution = optimize.minimize(error,[sigma, epsilonM, epsilonF],method='Nelder-Mead', bounds=[(0,2),(0.5,2),(0.5,2)])
             
-            opt2.sigma = solution.x[0]
-            opt2.epsilonM = solution.x[1]
-            opt2.epsilonF = solution.x[2]
+            # c.ii saves optimal coefficients
+            opt.sigma = solution.x[0]
+            opt.epsilonM = solution.x[1]
+            opt.epsilonF = solution.x[2]
         
-        else:
+        elif extended==False:
+            # a.ii defines error function
             def error(x):
                 par.sigma = x # sets sigma value
                 
@@ -263,20 +267,18 @@ class HouseholdSpecializationModelClass:
                 sol = self.run_regression() # calculates beta0 and beta1
                 error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
                 return error
-        
-        # b. minimizes the error using 'Nelder-Mead' with bounds
-        if ext==1:
-            solution = optimize.minimize(error,[sigma, epsilonM, epsilonF],method='Nelder-Mead', bounds=[(0,2),(0.5,2),(0.5,2)])
-            
-            opt2.epsilonM = solution.x[1]
-            opt2.epsilonF = solution.x[2]
-        else:
+
+            # b.ii minimizes the error using 'Nelder-Mead' with bounds            
             solution = optimize.minimize(error,[sigma],method='Nelder-Mead', bounds=[(0,2)])
 
-        # c. saves optimal value for alpha and beta
-        opt2.sigma = solution.x[0]
-        
-        error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
-        opt2.error = error
+            # c.ii saves optimal coefficients
+            opt.sigma = solution.x
 
-        return opt2
+        else:
+            print('extended must be either True or False')
+
+        # d. saves error value  
+        error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
+        opt.error = error
+
+        return opt
