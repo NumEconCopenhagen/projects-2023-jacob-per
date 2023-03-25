@@ -22,8 +22,10 @@ class HouseholdSpecializationModelClass:
         # b. preferences
         par.rho = 2.0
         par.nu = 0.001
-        par.epsilon = 1.0
+        par.epsilonM = 1.0
+        par.epsilonF = 1.0
         par.omega = 0.5 
+        
 
         # c. household production
         par.alpha = 0.5
@@ -79,10 +81,11 @@ class HouseholdSpecializationModelClass:
         utility = np.fmax(Q,1e-8)**(1-par.rho)/(1-par.rho)
 
         # d. disutlity of work
-        epsilon_ = 1+1/par.epsilon
+        epsilonM_ = 1+1/par.epsilonM
+        epsilonF_ = 1+1/par.epsilonF
         TM = LM+HM
         TF = LF+HF
-        disutility = par.nu*(TM**epsilon_/epsilon_+TF**epsilon_/epsilon_)
+        disutility = par.nu*(TM**epsilonM_/epsilonM_+TF**epsilonF_/epsilonF_)
         
         return utility - disutility
 
@@ -222,28 +225,54 @@ class HouseholdSpecializationModelClass:
         
         return opt
         
-    def est_alphacons(self,sigma=0.5):
+    def est_alphacons(self,sigma=0.5,epsilonM=1,epsilonF=1,ext=True):
         """ 
         sigma: set starting guess (standard=0.5) 
 
         estimate optimal values for sigma given alpha=0.5"""
+
         par = self.par
         sol = self.sol
-        opt2 = SimpleNamespace()
+        opt = SimpleNamespace()
         par.alpha = 0.5
 
         # a. defines error function
-        def error(sigma):
-            par.sigma = sigma # sets sigma value
+        if ext==True:
+            def error(x):
+                sigma, epsilonM, epsilonF = x.ravel()
+                par.sigma = sigma # sets sigma value
+                par.epsilonM = epsilonM
+                par.epsilonF = epsilonF
+                
+                self.solve_wF_vec() # finds optimal household production 
+                sol = self.run_regression() # calculates beta0 and beta1
+                error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
+                return error
             
-            self.solve_wF_vec() # finds optimal household production 
-            sol = self.run_regression() # calculates beta0 and beta1
-            error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
-            return error
+            solution = optimize.minimize(error,[sigma, epsilonM, epsilonF],method='Nelder-Mead', bounds=[(0,2),(0.5,2),(0.5,2)])
+            
+            opt2.sigma = solution.x[0]
+            opt2.epsilonM = solution.x[1]
+            opt2.epsilonF = solution.x[2]
+        
+        else:
+            def error(x):
+                par.sigma = x # sets sigma value
+                
+                self.solve_wF_vec() # finds optimal household production 
+                sol = self.run_regression() # calculates beta0 and beta1
+                error = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 #calculates error
+                return error
         
         # b. minimizes the error using 'Nelder-Mead' with bounds
-        solution = optimize.minimize(error,[sigma],method='Nelder-Mead', bounds=[(0.0001,10)])
-        
+        if ext==1:
+            solution = optimize.minimize(error,[sigma, epsilonM, epsilonF],method='Nelder-Mead', bounds=[(0,2),(0.5,2),(0.5,2)])
+            
+            opt2.epsilonM = solution.x[1]
+            opt2.epsilonF = solution.x[2]
+        else:
+            solution = optimize.minimize(error,[sigma],method='Nelder-Mead', bounds=[(0,2)])
+
         # c. saves optimal value for alpha and beta
         opt2.sigma = solution.x[0]
         
