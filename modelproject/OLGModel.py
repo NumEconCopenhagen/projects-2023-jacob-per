@@ -29,7 +29,6 @@ class OLGModelClass():
         par.beta = 1/1.40 # discount factor
 
         # b. firms
-<<<<<<< HEAD
         par.production_function = 'cobb-douglas'
         par.alpha = 0.30 # capital weight
         par.theta = 0.0 # substitution parameter
@@ -38,28 +37,15 @@ class OLGModelClass():
         # c. government
         par.tau_w = 0.0 # labor income tax
         par.tau_r = 0.0 # capital income tax
-=======
-        par.production_function = 'ces'
-        par.alpha = 0.30 # capital weight
-        par.theta = 0.05 # substitution parameter
-        par.delta = 0.50 # depreciation rate
-
-        # c. government
-        par.tau_w = 0.10 # labor income tax
-        par.tau_r = 0.20 # capital income tax
->>>>>>> 7354125d9a993cfdec69c0903e1d7b2a059d452b
 
         # d. misc
         par.K_lag_ini = 1.0 # initial capital stock
         par.B_lag_ini = 0.0 # initial government debt
         par.simT = 50 # length of simulation
-<<<<<<< HEAD
         par.E = 1.0 # standard labor
         par.E_shock = 2.0 # shock to labor
         par.shock_t = 1.0 # period where shock happens
     
-=======
->>>>>>> 7354125d9a993cfdec69c0903e1d7b2a059d452b
 
     def allocate(self):
         """ allocate arrays for simulation """
@@ -89,10 +75,7 @@ class OLGModelClass():
         # a. initial values
         sim.K_lag[0] = par.K_lag_ini
         sim.B_lag[0] = par.B_lag_ini
-<<<<<<< HEAD
         
-=======
->>>>>>> 7354125d9a993cfdec69c0903e1d7b2a059d452b
 
         # b. iterate
         for t in range(par.simT):
@@ -181,16 +164,10 @@ def simulate_before_s(par,sim,t):
     if t > 0:
         sim.K_lag[t] = sim.K[t-1]
         sim.B_lag[t] = sim.B[t-1]
-<<<<<<< HEAD
         
 
     # a. production and factor prices 
     if par.production_function == 'ces': # (kept from lectures, but not used)
-=======
-
-    # a. production and factor prices
-    if par.production_function == 'ces':
->>>>>>> 7354125d9a993cfdec69c0903e1d7b2a059d452b
 
         # i. production
         sim.Y[t] = ( par.alpha*sim.K_lag[t]**(-par.theta) + (1-par.alpha)*(1.0)**(-par.theta) )**(-1.0/par.theta)
@@ -202,19 +179,11 @@ def simulate_before_s(par,sim,t):
     elif par.production_function == 'cobb-douglas':
 
         # i. production
-<<<<<<< HEAD
         sim.Y[t] = sim.K_lag[t]**par.alpha * (sim.E[t])**(1-par.alpha)
 
         # ii. factor prices
         sim.rk[t] = par.alpha * sim.K_lag[t]**(par.alpha-1) * (sim.E[t])**(1-par.alpha)
         sim.w[t] = (1-par.alpha) * sim.K_lag[t]**(par.alpha) * (sim.E[t])**(-par.alpha)
-=======
-        sim.Y[t] = sim.K_lag[t]**par.alpha * (1.0)**(1-par.alpha)
-
-        # ii. factor prices
-        sim.rk[t] = par.alpha * sim.K_lag[t]**(par.alpha-1) * (1.0)**(1-par.alpha)
-        sim.w[t] = (1-par.alpha) * sim.K_lag[t]**(par.alpha) * (1.0)**(-par.alpha)
->>>>>>> 7354125d9a993cfdec69c0903e1d7b2a059d452b
 
     else:
 
@@ -229,7 +198,6 @@ def simulate_before_s(par,sim,t):
     sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+sim.B_lag[t])
 
     # d. government
-<<<<<<< HEAD
     sim.T[t] = sim.E[t-1]*par.tau_r*sim.r[t]*(sim.K_lag[t]+sim.B_lag[t]) + par.tau_w*sim.w[t]*sim.E[t]
 
     # e. labor
@@ -239,9 +207,6 @@ def simulate_before_s(par,sim,t):
     else:
         sim.E[t] = par.E
     
-=======
-    sim.T[t] = par.tau_r*sim.r[t]*(sim.K_lag[t]+sim.B_lag[t]) + par.tau_w*sim.w[t]
->>>>>>> 7354125d9a993cfdec69c0903e1d7b2a059d452b
 
     if sim.balanced_budget[t]:
         sim.G[t] = sim.T[t] - sim.r[t]*sim.B_lag[t]
