@@ -53,7 +53,7 @@ class OLGModelClass():
         # a. list of variables
         household = ['C1','C2']
         firm = ['K','Y','K_lag','E']
-        prices = ['w','rk','rb','r','rt']
+        prices = ['w','w_lag','rk','rb','r','rt']
         government = ['T']
 
         # b. allocate
@@ -137,7 +137,7 @@ def find_s_bracket(par,sim,t,maxiter=500,do_print=False):
 
         # iv. increment
         it += 1
-
+    
     raise Exception('cannot find bracket for s')
 
 def calc_euler_error(s,par,sim,t):
@@ -197,7 +197,7 @@ def simulate_before_s(par,sim,t,shock=False,regime='PAYG'):
         if t>0:
             sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+par.tau_w*sim.w[t-1])
         elif t==0:
-            sim.C2[t] = (1+sim.rt[t])*sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t]
+            sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t])
 
     if regime=='PAYG': #PAYG
         sim.C2[t] = (1+sim.rt[t])*sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t]
