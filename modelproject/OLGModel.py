@@ -36,12 +36,10 @@ class OLGModelClass():
         par.delta = 1.0 # depreciation rate
 
         # c. government
-        par.tau_w = 0.0 # labor income tax
-        par.tau_r = 0.0 # capital income tax
+        par.tau = 0.25 # labor income tax
 
         # d. misc
         par.K_lag_ini = 1.0 # initial capital stock
-        par.B_lag_ini = 0.0 # initial government debt
         par.simT = 50 # length of simulation
         par.w_lag_ini = 1.0 # initial wage
     
@@ -54,11 +52,10 @@ class OLGModelClass():
         # a. list of variables
         household = ['C1','C2']
         firm = ['K','Y','K_lag','E']
-        prices = ['w','w_lag','rk','rb','r','rt']
-        government = ['G','T','B','balanced_budget','B_lag']
+        prices = ['w','r']
 
         # b. allocate
-        allvarnames = household + firm + prices + government
+        allvarnames = household + firm + prices
         for varname in allvarnames:
             sim.__dict__[varname] = np.nan*np.ones(par.simT)
 
@@ -72,8 +69,7 @@ class OLGModelClass():
         
         # a. initial values
         sim.K_lag[0] = par.K_lag_ini
-        sim.B_lag[0] = par.B_lag_ini
-        sim.w_lag[0] = par.w_lag_ini
+        #sim.w_lag[0] = par.w_lag_ini
 
         # b. iterate
         for t in range(par.simT):
@@ -141,7 +137,7 @@ def find_s_bracket(par,sim,t,maxiter=500,do_print=False):
         # iv. increment
         it += 1
 
-    raise Exception('cannot find bracket for s')
+    #raise Exception('cannot find bracket for s')
 
 def calc_euler_error(s,par,sim,t):
     """ target function for finding s with bisection """
@@ -152,7 +148,7 @@ def calc_euler_error(s,par,sim,t):
 
     # c. Euler equation
     LHS = sim.C1[t]**(-par.sigma)
-    RHS = (1+sim.rt[t+1])*par.beta * sim.C2[t+1]**(-par.sigma)
+    RHS = par.beta*(1+sim.r[t+1])*sim.C2[t+1]**(-par.sigma)
 
     return LHS-RHS
 
@@ -168,8 +164,6 @@ def simulate_before_s(par, sim, t, shock=False, PAYG=False):
 
     if t > 0:
         sim.K_lag[t] = sim.K[t-1]
-        sim.B_lag[t] = sim.B[t-1]
-        sim.w_lag[t] = sim.w[t-1]
     
     # b. production and factor prices 
     if par.production_function == 'ces': # (kept from lectures, but not used)
@@ -178,7 +172,7 @@ def simulate_before_s(par, sim, t, shock=False, PAYG=False):
         sim.Y[t] = ( par.alpha*sim.K_lag[t]**(-par.theta) + (1-par.alpha)*(1.0)**(-par.theta) )**(-1.0/par.theta)
 
         # ii. factor prices
-        sim.rk[t] = par.alpha*sim.K_lag[t]**(-par.theta-1) * sim.Y[t]**(1.0+par.theta)
+        sim.r[t] = par.alpha*sim.K_lag[t]**(-par.theta-1) * sim.Y[t]**(1.0+par.theta)
         sim.w[t] = (1-par.alpha)*(1.0)**(-par.theta-1) * sim.Y[t]**(1.0+par.theta)
 
     elif par.production_function == 'cobb-douglas':
@@ -187,30 +181,29 @@ def simulate_before_s(par, sim, t, shock=False, PAYG=False):
         sim.Y[t] = sim.K_lag[t]**par.alpha * sim.E[t]**(1-par.alpha)
 
         # ii. factor prices
-        sim.rk[t] = par.alpha * sim.K_lag[t]**(par.alpha-1) * sim.E[t]**(1-par.alpha)
+        sim.r[t] = par.alpha * sim.K_lag[t]**(par.alpha-1) * sim.E[t]**(1-par.alpha)
         sim.w[t] = (1-par.alpha) * sim.K_lag[t]**(par.alpha) * sim.E[t]**(-par.alpha)
 
     else:
 
         raise NotImplementedError('unknown type of production function')
 
-    # c. no-arbitrage and after-tax return
-    sim.r[t] = sim.rk[t]-par.delta # after-depreciation return
-    sim.rb[t] = sim.r[t] # same return on bonds
-    sim.rt[t] = (1-par.tau_r)*sim.r[t] # after-tax return
+    # if t > 0:
+    #     sim.w_lag[t] = sim.w[t-1]
 
     # d. consumption
-    if PAYG==False: #FF
-        sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+par.tau_w*sim.w_lag[t])
+    # if PAYG==False: #FF
+    #     sim.w[-1]=par.w_lag_ini
+    #     sim.C2[t] = (1+sim.r[t])*(sim.K_lag[t]+par.tau*sim.w[t-1])
     if PAYG==True: #PAYG
-        sim.C2[t] = (1+sim.rt[t])*sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t]
+        sim.C2[t] = (1+sim.r[t])*sim.K_lag[t]+sim.E[t]*par.tau*sim.w[t]
  
 def simulate_after_s(par,sim,t,s):
     """ simulate forward """
 
     # a. consumption of young
-    sim.C1[t] = (1-par.tau_w)*sim.w[t]*(1.0-s)
+    sim.C1[t] = (1-par.tau)*sim.w[t]*(1.0-s)
 
     # b. end-of-period stocks
-    I = sim.Y[t] - sim.C1[t] - sim.C2[t] - sim.G[t]
+    I = sim.Y[t] - sim.C1[t] - sim.C2[t]
     sim.K[t] = (1-par.delta)*sim.K_lag[t] + I
