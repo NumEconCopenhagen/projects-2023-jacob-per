@@ -43,6 +43,7 @@ class OLGModelClass():
         par.K_lag_ini = 1.0 # initial capital stock
         par.B_lag_ini = 0.0 # initial government debt
         par.simT = 50 # length of simulation
+        par.w_lag_ini = 1.0 # initial wage
     
     def allocate(self):
         """ allocate arrays for simulation """
@@ -78,7 +79,7 @@ class OLGModelClass():
         for t in range(par.simT):
             
             # i. simulate before s
-            simulate_before_s(par,sim,t,shock)
+            simulate_before_s(par,sim,t,shock,PAYG)
 
             if t == par.simT-1: continue          
 
@@ -199,19 +200,11 @@ def simulate_before_s(par, sim, t, shock=False, PAYG=False):
     sim.rt[t] = (1-par.tau_r)*sim.r[t] # after-tax return
 
     # d. consumption
-    if PAYG==False:
+    if PAYG==False: #FF
         sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+par.tau_w*sim.w_lag[t])
-    if PAYG==True:
+    if PAYG==True: #PAYG
         sim.C2[t] = (1+sim.rt[t])*sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t]
-
-    # e. government
-    sim.T[t] = par.tau_r*sim.r[t]*(sim.K_lag[t]+sim.B_lag[t]) + par.tau_w*sim.w[t]
-    if sim.balanced_budget[t]:
-        sim.G[t] = sim.T[t] - sim.r[t]*sim.B_lag[t]
-
-    sim.B[t] = (1+sim.r[t])*sim.B_lag[t] - sim.T[t] + sim.G[t]
-
-        
+ 
 def simulate_after_s(par,sim,t,s):
     """ simulate forward """
 
