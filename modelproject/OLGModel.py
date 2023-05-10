@@ -90,6 +90,9 @@ class OLGModelClass():
             # iii. simulate after s
             simulate_after_s(par,sim,t,s)
 
+            # iv. utility
+            utility = (sim.C1[t]**(1-par.sigma))/(1-par.sigma) + par.beta*((sim.C2[t+1]**(1-par.sigma))/(1-par.sigma))
+
         if do_print: print(f'simulation done in {time.time()-t0:.2f} secs')
 
 def find_s_bracket(par,sim,t,maxiter=500,do_print=False):

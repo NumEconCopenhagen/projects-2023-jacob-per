@@ -51,7 +51,7 @@ class OLGModelClass():
         sim = self.sim
 
         # a. list of variables
-        household = ['C1','C2']
+        household = ['U','C1','C2']
         firm = ['K','Y','K_lag','E']
         prices = ['w','w_lag','rk','rb','r','rt']
         government = ['T']
@@ -90,7 +90,7 @@ class OLGModelClass():
 
             # iii. simulate after s
             simulate_after_s(par,sim,t,s)
-
+            
         if do_print: print(f'simulation done in {time.time()-t0:.2f} secs')
 
 def find_s_bracket(par,sim,t,maxiter=500,do_print=False):
@@ -201,6 +201,7 @@ def simulate_before_s(par,sim,t,shock=False,regime='PAYG'):
 
     # d. government
     sim.T[t] = par.tau_r*sim.r[t]*(sim.K_lag[t]) + par.tau_w*sim.w[t]
+
    
 def simulate_after_s(par,sim,t,s):
     """ simulate forward """
@@ -211,3 +212,6 @@ def simulate_after_s(par,sim,t,s):
     # b. end-of-period stocks
     I = sim.Y[t] - sim.C1[t] - sim.C2[t] - sim.T[t]
     sim.K[t] = (1-par.delta)*sim.K_lag[t] + I
+
+    # c. utility
+    sim.U[t] = (sim.C1[t]**(1-par.sigma))/(1-par.sigma) + par.beta*((sim.C2[t+1]**(1-par.sigma))/(1-par.sigma))
