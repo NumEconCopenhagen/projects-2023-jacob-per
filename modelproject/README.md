@@ -1,6 +1,6 @@
 # Model analysis project
 
-Our project is titled **PROJECT TITLE** and is about EXPLAIN.
+Our project is titled **Effect of labor supply with different pension systems** and is about the effects on utility.
 
 The **results** of the project can be seen from running [modelproject.ipynb](modelproject.ipynb).
 
