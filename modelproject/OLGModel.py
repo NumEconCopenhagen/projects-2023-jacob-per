@@ -27,12 +27,13 @@ class OLGModelClass():
         # a. household
         par.sigma = 2.0 # CRRA coefficient
         par.beta = 1/1.40 # discount factor
+        par.E_ini = 1.0 # initial employment
 
         # b. firms
         par.production_function = 'cobb-douglas'
         par.alpha = 0.30 # capital weight
         par.theta = 0.0 # substitution parameter
-        par.delta = 0.50 # depreciation rate
+        par.delta = 1.0 # depreciation rate
 
         # c. government
         par.tau_w = 0.0 # labor income tax
@@ -42,7 +43,6 @@ class OLGModelClass():
         par.K_lag_ini = 1.0 # initial capital stock
         par.B_lag_ini = 0.0 # initial government debt
         par.simT = 50 # length of simulation
-        par.E_ini = 1.0
     
     def allocate(self):
         """ allocate arrays for simulation """
@@ -52,8 +52,8 @@ class OLGModelClass():
 
         # a. list of variables
         household = ['C1','C2']
-        firm = ['K','Y','K_lag', 'E']
-        prices = ['w','rk','rb','r','rt']
+        firm = ['K','Y','K_lag','E']
+        prices = ['w','w_lag','rk','rb','r','rt']
         government = ['G','T','B','balanced_budget','B_lag']
 
         # b. allocate
@@ -61,7 +61,7 @@ class OLGModelClass():
         for varname in allvarnames:
             sim.__dict__[varname] = np.nan*np.ones(par.simT)
 
-    def simulate(self,do_print=True,shock=False):
+    def simulate(self,do_print=True, shock=False, PAYG=False):
         """ simulate model """
 
         t0 = time.time()
@@ -72,6 +72,7 @@ class OLGModelClass():
         # a. initial values
         sim.K_lag[0] = par.K_lag_ini
         sim.B_lag[0] = par.B_lag_ini
+        sim.w_lag[0] = par.w_lag_ini
 
         # b. iterate
         for t in range(par.simT):
@@ -154,10 +155,10 @@ def calc_euler_error(s,par,sim,t):
 
     return LHS-RHS
 
-def simulate_before_s(par,sim,t,shock=False):
+def simulate_before_s(par, sim, t, shock=False, PAYG=False):
     """ simulate forward """
 
-    
+    # a. shock to employment
     sim.E[t]=(par.E_ini+sim.E[t-1])*0.5
     sim.E[0]=par.E_ini
     if shock==True:
@@ -167,8 +168,9 @@ def simulate_before_s(par,sim,t,shock=False):
     if t > 0:
         sim.K_lag[t] = sim.K[t-1]
         sim.B_lag[t] = sim.B[t-1]
+        sim.w_lag[t] = sim.w[t-1]
     
-    # a. production and factor prices 
+    # b. production and factor prices 
     if par.production_function == 'ces': # (kept from lectures, but not used)
 
         # i. production
@@ -191,15 +193,18 @@ def simulate_before_s(par,sim,t,shock=False):
 
         raise NotImplementedError('unknown type of production function')
 
-    # b. no-arbitrage and after-tax return
+    # c. no-arbitrage and after-tax return
     sim.r[t] = sim.rk[t]-par.delta # after-depreciation return
     sim.rb[t] = sim.r[t] # same return on bonds
     sim.rt[t] = (1-par.tau_r)*sim.r[t] # after-tax return
 
-    # c. consumption
-    sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+sim.B_lag[t])
+    # d. consumption
+    if PAYG==False:
+        sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+par.tau_w*sim.w_lag[t])
+    if PAYG==True:
+        sim.C2[t] = (1+sim.rt[t])*sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t]
 
-    # d. government
+    # e. government
     sim.T[t] = par.tau_r*sim.r[t]*(sim.K_lag[t]+sim.B_lag[t]) + par.tau_w*sim.w[t]
     if sim.balanced_budget[t]:
         sim.G[t] = sim.T[t] - sim.r[t]*sim.B_lag[t]
