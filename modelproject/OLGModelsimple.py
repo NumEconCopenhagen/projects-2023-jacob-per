@@ -194,10 +194,7 @@ def simulate_before_s(par,sim,t,shock=False,regime='PAYG'):
     # sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t])+par.tau_w*sim.w[t]*sim.E[t]
 
     if regime=='FF': #FF
-        if t>0:
-            sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+par.tau_w*sim.w[t-1])
-        elif t==0:
-            sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t])
+        sim.C2[t] = (1+sim.rt[t])*(sim.K_lag[t]+par.tau_w*sim.w[t-1])
 
     if regime=='PAYG': #PAYG
         sim.C2[t] = (1+sim.rt[t])*sim.K_lag[t]+sim.E[t]*par.tau_w*sim.w[t]
