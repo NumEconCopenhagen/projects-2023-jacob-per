@@ -24,18 +24,16 @@ class simClass():
 
         par = self.par
 
-        # parameters
+        # a. parameters
         par.eta = 0.5
         par.w = 1.0
         par.kappa = 1.5 
-        
-        # parameters
         par.rho = 0.9
         par.iota = 0.01
         par.sigma_eps = 0.1
         par.R = (1+0.01)**(1/12)
 
-        # misc
+        # b. misc
         par.simT = 119
         par.l_ini = 0
         par.kappa_ini = 1
@@ -75,22 +73,20 @@ class simClass():
             if t>0:
                 sim.log_kappa_lag[t] = sim.log_kappa[t-1]
 
-            # shock
+            # i. demand shock
             sim.epsilon[t] = np.random.normal(-0.5*par.sigma_eps**2,par.sigma_eps)
-
-            # kappa
             sim.log_kappa[t] = par.rho*sim.log_kappa_lag[t] + sim.epsilon[t]
             
-            # labor
+            # ii. optimal labor
             sim.l[t] = (((1-par.eta)*sim.kappa[t])/par.w)**(1/par.eta)
             
-            # h contribution
+            # iii. h contribution
             if sim.l[t] != sim.l[t-1]:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
             else:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
             
-        # h aggr
+        # c. h (aggregate)
         sim.h = np.sum(sim.h_con)
     
         return sim
