@@ -12,6 +12,7 @@ class simClass():
 
         self.par = SimpleNamespace()
         self.sim = SimpleNamespace()
+        self.sol = SimpleNamespace()
 
         if do_print: print('calling .setup()')
         self.setup()
@@ -117,5 +118,40 @@ class simClass():
             else:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
 
+    def optimizer(self,value_function,n_guess=1,seeds=1,K=100, do_print=False):
+               
+        sol = self.sol
+        
+        # a. random guesses
+        guess_draw = np.random.uniform(0.01,0.19,n_guess)
+        guess = np.sort(guess_draw)
+
+        # b. setup
+        best_H = 0
+        best = np.zeros((2,n_guess))
+
+        # optimizer guesses
+        for n in range(n_guess):
+
+            # i. optimal delta for a given guess (note: change to SLSQP to increase speed)
+            now_delta = optimize.minimize(value_function,guess[n], method='SLSQP',bounds=[(0,0.25)]).x[0]
+                
+            # ii. calculates H
+            now_H = self.simulate(now_delta,K).H
+
+            # iii. store results 
+            best[0,n] = now_delta
+            best[1,n] = now_H
+
+            # iv. change best if better
+            if now_H > best_H:
+                best_delta = now_delta
+                best_H = now_H
+            
+            if do_print==True:
+                print(f'initial guess={guess[n]:.3f}: optimal guess to H={best_H:.3f} and delta={best_delta:.3f}')
+        
+        return best, best_delta, best_H
+            
 
 
