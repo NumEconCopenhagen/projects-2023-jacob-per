@@ -49,17 +49,15 @@ class simClass():
         sim = self.sim
 
         # a. list of variables
-        variables = ['t','kappa','log_kappa','log_kappa_lag','l','epsilon','h_con']
+        variables = ['t','kappa','log_kappa','log_kappa_lag','l','epsilon','h_con','h_l_change','h_no_l_change']
 
         # b. allocate
         for varname in variables:
             sim.__dict__[varname] = np.nan*np.ones(par.simT)
 
 
-    def simulate(self,delta=0.0,K=1):
+    def simulate(self,delta=0.0,K=1,seed=0,extension=False):
         """ simulate model """
-
-        t0 = time.time()
 
         par = self.par
         sim = self.sim
@@ -73,20 +71,30 @@ class simClass():
         for k in range(K):
             
             # i. simulating model
-            self.iterate(delta)
+            if extension == False:
+                self.iterate(delta,seed)
+            
+            elif extension == True:
+                self.iterate_ext(delta,seed,extension)
+
+            else:
+                print('extension must be True or False')
 
             # ii. h (aggregate)
             sim.h = np.sum(sim.h_con)
 
             # iii. H contribution
             H_con[0,k] = sim.h
+
         
         # c. H (aggregate)
         sim.H = np.average(H_con)
 
         return sim
 
-    def iterate(self,delta):
+    def iterate(self,delta,seed):
+
+        np.random.seed(seed)
 
         par = self.par
         sim = self.sim
@@ -119,13 +127,49 @@ class simClass():
             else:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
 
-    def optimizer(self,value_function,n_guess=1,seeds=1,K=100, do_print=False):
-               
-        sol = self.sol
+    def iterate_ext(self,delta,seed,extension):
+
+        np.random.seed(seed)
+
+        par = self.par
+        sim = self.sim
+
+        # a. initial values
+        sim.log_kappa_lag[0] = np.log(par.kappa_ini)
+        sim.l[0] = par.l_ini
+
+        # b. iterating
+        for t in range(par.simT):
+                
+            if t>0:
+                sim.log_kappa_lag[t] = sim.log_kappa[t-1]
+            
+            # i. demand shock
+            sim.epsilon[t] = np.random.normal(-0.5*par.sigma_eps**2,par.sigma_eps)
+            sim.log_kappa[t] = par.rho*sim.log_kappa_lag[t] + sim.epsilon[t]
+            sim.kappa[t] = np.exp(sim.log_kappa[t])
+            
+            # ii. optimal labor
+            sim.l[t] = (((1-par.eta)*sim.kappa[t])/par.w)**(1/par.eta)
+            
+            # iii. extension (if profit is larger with change, then change)
+            sim.h_l_change[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
+            sim.h_no_l_change[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t-1]**(1-par.eta) - par.w*sim.l[t-1])
+            if sim.h_l_change[t] - par.iota < sim.h_no_l_change[t]:
+                sim.l[t] = sim.l[t-1]
+
+            # iii. h contribution
+            if sim.l[t] == sim.l[t-1]:
+                sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
+            else:
+                sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
+
+            
+
+    def optimizer(self,value_function,n_guess=1,seed=0,K=100, do_print=False):
         
         # a. random guesses
-        guess_draw = np.random.uniform(0.01,0.19,n_guess)
-        guess = np.sort(guess_draw)
+        guess_draw = np.random.normal(0.0,0.25,n_guess)
 
         # b. setup
         best_H = 0
@@ -135,10 +179,10 @@ class simClass():
         for n in range(n_guess):
 
             # i. optimal delta for a given guess (note: change to SLSQP to increase speed)
-            now_delta = optimize.minimize(value_function,guess[n], method='SLSQP',bounds=[(0,0.25)]).x[0]
+            now_delta = optimize.minimize(value_function,guess_draw[n], method='SLSQP',bounds=[(0,0.25)]).x[0]
                 
             # ii. calculates H
-            now_H = self.simulate(now_delta,K).H
+            now_H = self.simulate(now_delta,K,seed).H
 
             # iii. store results 
             best[0,n] = now_delta
