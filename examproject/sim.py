@@ -56,10 +56,8 @@ class simClass():
             sim.__dict__[varname] = np.nan*np.ones(par.simT)
 
 
-    def simulate(self,delta=0.0,K=1):
+    def simulate(self,delta=0.0,K=1,seed=0):
         """ simulate model """
-
-        t0 = time.time()
 
         par = self.par
         sim = self.sim
@@ -73,7 +71,7 @@ class simClass():
         for k in range(K):
             
             # i. simulating model
-            self.iterate(delta)
+            self.iterate(delta,seed)
 
             # ii. h (aggregate)
             sim.h = np.sum(sim.h_con)
@@ -86,7 +84,9 @@ class simClass():
 
         return sim
 
-    def iterate(self,delta):
+    def iterate(self,delta,seed):
+
+        np.random.seed(seed)
 
         par = self.par
         sim = self.sim
@@ -119,13 +119,10 @@ class simClass():
             else:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
 
-    def optimizer(self,value_function,n_guess=1,seeds=1,K=100, do_print=False):
-               
-        sol = self.sol
+    def optimizer(self,value_function,n_guess=1,seed=0,K=100, do_print=False):
         
         # a. random guesses
-        guess_draw = np.random.uniform(0.01,0.19,n_guess)
-        guess = np.sort(guess_draw)
+        guess_draw = np.random.normal(0.0,0.25,n_guess)
 
         # b. setup
         best_H = 0
@@ -135,10 +132,10 @@ class simClass():
         for n in range(n_guess):
 
             # i. optimal delta for a given guess (note: change to SLSQP to increase speed)
-            now_delta = optimize.minimize(value_function,guess[n], method='SLSQP',bounds=[(0,0.25)]).x[0]
+            now_delta = optimize.minimize(value_function,guess_draw[n], method='SLSQP',bounds=[(0,0.25)]).x[0]
                 
             # ii. calculates H
-            now_H = self.simulate(now_delta,K).H
+            now_H = self.simulate(now_delta,K,seed).H
 
             # iii. store results 
             best[0,n] = now_delta
