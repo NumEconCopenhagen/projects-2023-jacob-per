@@ -209,20 +209,15 @@ class simClass():
         if not K_>0 or not K>K_:
             print('choose number of warm-up iterations K_ > 0 and maximum number of iterations K > K_')
 
-        # misc. setup
-        xk = np.zeros((2))
-        x_star = [1000,1000] # high dummy value
-
         # 3. iterating
         for k in range(K):
             # a. draw random number
-            xk[0] = np.random.uniform(x1,x2)
-            xk[1] = np.random.uniform(x1,x2)
+            xk = np.random.uniform(x1, x2, size=2)
 
             if k<=K_: # initial guess in warm up
                 xk0=[xk[0],xk[1]]
             
-            if k >= K_: # after warm ip
+            if k >= K_: # after warm up
                     
                 # c. calculate weight
                 chik = 0.5*2/(1+np.exp((k-K_)/100))
