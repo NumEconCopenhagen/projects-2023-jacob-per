@@ -49,7 +49,7 @@ class simClass():
         sim = self.sim
 
         # a. list of variables
-        variables = ['t','kappa','log_kappa','log_kappa_lag','l','epsilon','h_con']
+        variables = ['t','kappa','log_kappa','log_kappa_lag','l','epsilon','h_con','h_l_change','h_no_l_change']
 
         # b. allocate
         for varname in variables:
@@ -71,7 +71,14 @@ class simClass():
         for k in range(K):
             
             # i. simulating model
-            self.iterate(delta,seed,extension)
+            if extension == False:
+                self.iterate(delta,seed)
+            
+            elif extension == True:
+                self.iterate_ext(delta,seed,extension)
+
+            else:
+                print('extension must be True or False')
 
             # ii. h (aggregate)
             sim.h = np.sum(sim.h_con)
