@@ -152,6 +152,57 @@ class simClass():
                 print(f'initial guess={guess[n]:.3f}: optimal guess to H={best_H:.3f} and delta={best_delta:.3f}')
         
         return best, best_delta, best_H
+    
+    def global_optimizer(self,value_function,K_,K,tau=10**(-8),x1=-600,x2=600,do_print=False):
+        
+        # 1. tolerance tau > 0
+        if not tau>0:
+            print('tau must be larger than 0')
+            
+        # 2. warm-up iterations K_ > 0 and maxi iterations K > K_
+        if not K_>0 or not K>K_:
+            print('choose number of warm-up iterations K_ > 0 and maximum number of iterations K > K_')
+
+        # misc. setup
+        xk = np.zeros((2))
+        x_star = [1000,1000] # high dummy value
+
+        # 3. iterating
+        for k in range(K):
+            # a. draw random number
+            xk[0] = np.random.uniform(x1,x2)
+            xk[1] = np.random.uniform(x1,x2)
+
+            if k<=K_: # initial guess in warm up
+                xk0=[xk[0],xk[1]]
+            
+            if k >= K_: # after warm ip
+                    
+                # c. calculate weight
+                chik = 0.5*2/(1+np.exp((k-K_)/100))
+
+                # d. update initial guess with weight
+                xk0 = chik*xk + (1-chik)*x_star
+
+            # e. run optimizer
+            xk_star = optimize.minimize(value_function,xk0,method='BFGS',tol=tau).x
+            
+            # f. update best guess if better
+            if k==0 or value_function(xk_star) < value_function(x_star):
+                x_star=xk_star
+                if do_print==True:
+                    print(f'iteration {k}: updating optimal value... x1 = {x_star[0]:.3f} and x2 = {x_star[1]:.3f}')
+
+            # g. stop if below tolerance         
+            if value_function(x_star) < tau:
+                break
+
+        # 4. return optimal
+        return x_star
+
+
+
+        
             
 
 
