@@ -5,6 +5,7 @@ from scipy import optimize
 
 class simClass():
 
+# for problem 2:
     def __init__(self,do_print=True):
         """ create the model """
 
@@ -153,6 +154,7 @@ class simClass():
         
         return best, best_delta, best_H
     
+    # for problem 3:
     def global_optimizer(self,value_function,K_,K,tau=10**(-8),x1=-600,x2=600,do_print=False):
         
         # 1. tolerance tau > 0
