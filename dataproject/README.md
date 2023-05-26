@@ -1,14 +1,9 @@
 # Data analysis project
 
-Our project is titled **PROJECT TITLE** and is about EXPLAIN.
+Our project is titled **Effect of exchange rate on production in manufacturing and government** and is about the effect of exchange rate on production in manufacturing and government using data from DST.
 
 The **results** of the project can be seen from running [dataproject.ipynb](dataproject.ipynb).
 
-We apply the **following datasets**:
-
-1. dataX.csv (*source*) 
-1. dataY.csv (*source*)
-
 **Dependencies:** Apart from a standard Anaconda Python 3 installation, the project requires the following installations:
 
-``pip install matplotlib-venn``
+Install DSTapi with: pip install git+https://github.com/alemartinello/dstapi
