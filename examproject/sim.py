@@ -57,7 +57,12 @@ class simClass():
 
 
     def simulate(self,delta=0.0,K=1,seed=0,extension=False):
-        """ simulate model """
+        """ simulates model 
+        delta: value of delta (default: 0.0)
+        K: amount of times the model will run (default: 1)
+        seed: chosen seed (default 0)
+        extension: use of alternative policy (default: False)
+        """
 
         par = self.par
         sim = self.sim
@@ -75,7 +80,7 @@ class simClass():
                 self.iterate(delta,seed)
             
             elif extension == True:
-                self.iterate_ext(delta,seed,extension)
+                self.iterate_ext(seed)
 
             else:
                 print('extension must be True or False')
@@ -93,6 +98,10 @@ class simClass():
         return sim
 
     def iterate(self,delta,seed):
+        """ iterates model over 120 periods
+        K: amount of times the model will run (default: 1)
+        seed: chosen seed (default 0)
+        """
 
         np.random.seed(seed)
 
@@ -127,7 +136,10 @@ class simClass():
             else:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
 
-    def iterate_ext(self,delta,seed,extension):
+    def iterate_ext(self,seed):
+        """ iterates model over 120 periods with the alternative policy
+        seed: chosen seed (default 0)
+        """
 
         np.random.seed(seed)
 
@@ -152,13 +164,13 @@ class simClass():
             # ii. optimal labor
             sim.l[t] = (((1-par.eta)*sim.kappa[t])/par.w)**(1/par.eta)
             
-            # iii. extension (if profit is larger with change, then change)
+            # iii. extension
             sim.h_l_change[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
             sim.h_no_l_change[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t-1]**(1-par.eta) - par.w*sim.l[t-1])
             if sim.h_l_change[t] - par.iota < sim.h_no_l_change[t]:
                 sim.l[t] = sim.l[t-1]
 
-            # iii. h contribution
+            # iv. h contribution
             if sim.l[t] == sim.l[t-1]:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
             else:
@@ -167,6 +179,13 @@ class simClass():
             
 
     def optimizer(self,value_function,n_guess=1,seed=0,K=100, do_print=False):
+        """ finds the optimal value of delta
+        value_function: function to minimize
+        n_guess: count of initial guesses (default: 1)
+        seed: chose seed (default: 0)
+        K: how many times to simulate model (default: 100)
+        do_print: whether to print additional information (default: False)
+        """
         
         # a. random guesses
         guess_draw = np.random.normal(0.0,0.25,n_guess)
@@ -200,7 +219,16 @@ class simClass():
     
     # for problem 3:
     def global_optimizer(self,value_function,K_,K,tau=10**(-8),x1=-600,x2=600,do_print=False):
-        
+        """ optimizes function of to variables with multi start
+        value_function: function to optimize
+        K_: warm up iterations
+        K: max iterations
+        tau: tolerance for optimizer (default: 10**(-8))
+        x1: lower bound (default: -600)
+        x2: upper bound (default: 600)
+        do_print: print additional information (default: False)
+        """
+
         # 1. tolerance tau > 0
         if not tau>0:
             print('tau must be larger than 0')
