@@ -56,7 +56,7 @@ class simClass():
             sim.__dict__[varname] = np.nan*np.ones(par.simT)
 
 
-    def simulate(self,delta=0.0,K=1,seed=0):
+    def simulate(self,delta=0.0,K=1,seed=0,extension=False):
         """ simulate model """
 
         par = self.par
@@ -71,13 +71,14 @@ class simClass():
         for k in range(K):
             
             # i. simulating model
-            self.iterate(delta,seed)
+            self.iterate(delta,seed,extension)
 
             # ii. h (aggregate)
             sim.h = np.sum(sim.h_con)
 
             # iii. H contribution
             H_con[0,k] = sim.h
+
         
         # c. H (aggregate)
         sim.H = np.average(H_con)
@@ -118,6 +119,45 @@ class simClass():
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
             else:
                 sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
+
+    def iterate_ext(self,delta,seed,extension):
+
+        np.random.seed(seed)
+
+        par = self.par
+        sim = self.sim
+
+        # a. initial values
+        sim.log_kappa_lag[0] = np.log(par.kappa_ini)
+        sim.l[0] = par.l_ini
+
+        # b. iterating
+        for t in range(par.simT):
+                
+            if t>0:
+                sim.log_kappa_lag[t] = sim.log_kappa[t-1]
+            
+            # i. demand shock
+            sim.epsilon[t] = np.random.normal(-0.5*par.sigma_eps**2,par.sigma_eps)
+            sim.log_kappa[t] = par.rho*sim.log_kappa_lag[t] + sim.epsilon[t]
+            sim.kappa[t] = np.exp(sim.log_kappa[t])
+            
+            # ii. optimal labor
+            sim.l[t] = (((1-par.eta)*sim.kappa[t])/par.w)**(1/par.eta)
+            
+            # iii. extension (if profit is larger with change, then change)
+            sim.h_l_change[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
+            sim.h_no_l_change[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t-1]**(1-par.eta) - par.w*sim.l[t-1])
+            if sim.h_l_change[t] - par.iota < sim.h_no_l_change[t]:
+                sim.l[t] = sim.l[t-1]
+
+            # iii. h contribution
+            if sim.l[t] == sim.l[t-1]:
+                sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t])
+            else:
+                sim.h_con[t] = par.R**(-t)*(sim.kappa[t]*sim.l[t]**(1-par.eta) - par.w*sim.l[t] - par.iota)
+
+            
 
     def optimizer(self,value_function,n_guess=1,seed=0,K=100, do_print=False):
         
