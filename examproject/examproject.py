@@ -83,7 +83,7 @@ class simClass():
                 self.iterate_ext(seed)
 
             else:
-                print('extension must be True or False')
+                raise TypeError('extension must be True or False')
 
             # ii. h (aggregate)
             sim.h = np.sum(sim.h_con)
@@ -91,7 +91,6 @@ class simClass():
             # iii. H contribution
             H_con[0,k] = sim.h
 
-        
         # c. H (aggregate)
         sim.H = np.average(H_con)
 
@@ -126,9 +125,8 @@ class simClass():
             # ii. optimal labor
             sim.l[t] = (((1-par.eta)*sim.kappa[t])/par.w)**(1/par.eta)
             
-            if delta!=0:
-                if np.absolute(sim.l[t-1]-sim.l[t]) <= delta:
-                    sim.l[t] = sim.l[t-1]
+            if np.absolute(sim.l[t-1]-sim.l[t]) <= delta:
+                sim.l[t] = sim.l[t-1]
             
             # iii. h contribution
             if sim.l[t] == sim.l[t-1]:
@@ -182,7 +180,7 @@ class simClass():
         """ finds the optimal value of delta
         value_function: function to minimize
         n_guess: count of initial guesses (default: 1)
-        seed: chose seed (default: 0)
+        seed: choose seed (default: 0)
         K: how many times to simulate model (default: 100)
         do_print: whether to print additional information (default: False)
         """
@@ -197,7 +195,7 @@ class simClass():
         # optimizer guesses
         for n in range(n_guess):
 
-            # i. optimal delta for a given guess (note: change to SLSQP to increase speed)
+            # i. optimal delta for a given guess (note: SLSQP to increase speed)
             now_delta = optimize.minimize(value_function,guess_draw[n], method='SLSQP',bounds=[(0,0.25)]).x[0]
                 
             # ii. calculates H
@@ -213,13 +211,13 @@ class simClass():
                 best_H = now_H
             
             if do_print==True:
-                print(f'initial guess={guess[n]:.3f}: optimal guess to H={best_H:.3f} and delta={best_delta:.3f}')
+                print(f'initial guess={guess_draw[n]:.3f}: optimal guess to H={best_H:.3f} and delta={best_delta:.3f}')
         
         return best, best_delta, best_H
     
     # for problem 3:
     def global_optimizer(self,value_function,K_,K,tau=10**(-8),x1=-600,x2=600,do_print=False):
-        """ optimizes function of to variables with multi start
+        """ optimizes function of two variables with multi start
         value_function: function to optimize
         K_: warm up iterations
         K: max iterations
@@ -245,6 +243,7 @@ class simClass():
             if k<=K_: # initial guess in warm up
                 xk0=[xk[0],xk[1]]
             
+            # b. skip if k < K_ 
             if k >= K_: # after warm up
                     
                 # c. calculate weight
